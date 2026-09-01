@@ -1,0 +1,276 @@
+﻿@page "/incidents"
+@layout DashboardLayout
+@using IncidentManagement.Application.Dtos.Requests
+@using IncidentManagement.Shared.Models
+@using IncidentManagement.Shared.Services
+@using IncidentManagement.WebClient.Components
+@using IncidentManagement.WebClient.Services
+@inject IncidentService IncidentService
+@inject AuthState AuthState
+@inject UserService UserService
+
+<ConfirmDialog @ref="confirmDialog"
+               OnConfirm="ConfirmDelete"
+               OnCancel="CancelDelete" />
+
+<div class="profile-container">
+    <h2>Incident Management</h2>
+
+    <!-- Button to open modal -->
+    <button class="add-btn" @onclick="ShowModal">➕ Add New Incident</button>
+
+    <!-- Modal Popup -->
+    @if (IsModalOpen)
+    {
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <h3>Capture New Incident</h3>
+
+                <label>Title</label>
+                <input type="text" @bind="NewIncident.Title" />
+
+                <label>Status</label>
+                <select @bind="NewIncident.Status">
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Closed">Closed</option>
+                </select>
+
+                <label>Priority</label>
+                <select @bind="NewIncident.Priority">
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+
+                <!-- Role Team dropdown -->
+                <label>Role Team</label>
+                <select @bind="SelectedRole">
+                    <option value="">-- Select Role --</option>
+                    @foreach (var role in Roles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+
+                <label>Assigned To</label>
+                <select @bind="NewIncident.AssignedTo">
+                    @foreach (var user in FilteredUsersByRole)
+                    {
+                        <option value="@user.Username">@user.Username</option>
+                    }
+                </select>
+
+                <label>Description</label>
+                <textarea @bind="NewIncident.Description"></textarea>
+
+                <div class="modal-actions">
+                    <button class="cancel-btn" @onclick="CloseModal">Cancel</button>
+                    <button class="save-btn" @onclick="SaveIncident">Save</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filters -->
+    <p class="subtitle">Search, filter, capture, and manage incidents</p>
+    <div class="filters">
+        <input type="text" placeholder="Search by Title"
+               value="@SearchTitle"
+               @oninput="OnSearchChanged" />
+        <select @bind="FilterStatus">
+            <option value="">All Statuses</option>
+            <option value="Open">Open</option>
+            <option value="Closed">Closed</option>
+            <option value="In Progress">In Progress</option>
+        </select>
+        <select @bind="FilterPriority">
+            <option value="">All Priorities</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+        </select>
+        <select @bind="FilterAssignedTo">
+            <option value="">All Assignees</option>
+            @foreach (var user in Users)
+            {
+                <option value="@user.Username">@user.Username</option>
+            }
+        </select>
+    </div>
+
+    <!-- Incident Grid -->
+    <table class="incident-table">
+        <thead>
+            <tr>
+                <th>Incident ID</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Assigned To</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @* @foreach (var incident in PagedIncidents)
+            {
+                <tr>
+                    <td>@incident.IncidentId</td>
+                    <td>@incident.Title</td>
+                    <td>@incident.Status</td>
+                    <td>@incident.Priority</td>
+                    <td>@incident.AssignedTo</td>
+                    <td data-label="Actions">
+                        <button class="icon-btn edit" data-tooltip="Edit Incident" @onclick="() => EditIncident(incident)">✏️</button>
+                        <button class="icon-btn danger" data-tooltip="Delete Incident" @onclick="() => AskDeleteConfirmation(incident.IncidentId)">❌</button>
+                    </td>
+                </tr>
+            } *@
+        </tbody>
+    </table>
+
+    <!-- Paging -->
+    @* <div class="paging-controls">
+        <button @onclick="PreviousPage" disabled="@(!HasPrevious)">Previous</button>
+        <span>Page @CurrentPage of @TotalPages</span>
+        <button @onclick="NextPage" disabled="@(!HasNext)">Next</button>
+    </div> *@
+</div>
+
+@code {
+    private bool IsModalOpen = false;
+    private Incident NewIncident = new();
+    private List<User> Users = new();
+    private List<string> Roles = new();
+    private List<User> FilteredUsersByRole = new();
+
+    private string SearchTitle = "";
+    private string FilterStatus = "";
+    private string FilterPriority = "";
+    private string FilterAssignedTo = "";
+
+    private int CurrentPage = 1;
+    private int PageSize = 3;
+
+    private ConfirmDialog confirmDialog;
+    private int pendingIncidentId;
+
+    protected override void OnInitialized()
+    {
+        Users = UserService.Users.ToList();
+        Roles = Users.Where(x => x.Role != "Tenant" || x.Role != "Resident").Select(u => u.Role).Distinct().ToList();
+        FilteredUsersByRole = new List<User>();
+    }
+
+    // Single property for binding
+    private string SelectedRole
+    {
+        get => selectedRole;
+        set
+        {
+            selectedRole = value;
+            FilteredUsersByRole = string.IsNullOrEmpty(selectedRole)
+                ? new List<User>()
+                : Users.Where(u => u.Role == selectedRole).ToList();
+        }
+    }
+    private string selectedRole = "";
+
+    // private List<Incident> FilteredIncidents =>
+    //     IncidentService.GetIncidentsForUser(AuthState.CurrentUser ?? string.Empty, AuthState.CurrentUserRole ?? string.Empty)
+    //     .Where(i =>
+    //         (string.IsNullOrEmpty(SearchTitle) ||
+    //          SearchTitle.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+    //                     .Take(3)
+    //                     .Any(word => i.Title.Contains(word, StringComparison.OrdinalIgnoreCase)))
+    //         && (string.IsNullOrEmpty(FilterStatus) || i.Status == FilterStatus)
+    //         && (string.IsNullOrEmpty(FilterPriority) || i.Priority == FilterPriority)
+    //         && (string.IsNullOrEmpty(FilterAssignedTo) || i.AssignedTo == FilterAssignedTo)
+    //     )
+    //     .ToList();
+
+    // private int TotalPages => (int)Math.Ceiling((double)FilteredIncidents.Count / PageSize);
+    private bool HasPrevious => CurrentPage > 1;
+    //private bool HasNext => CurrentPage < TotalPages;
+
+    // private List<Incident> PagedIncidents => FilteredIncidents
+    //     .Skip((CurrentPage - 1) * PageSize)
+    //     .Take(PageSize)
+    //     .ToList();
+
+    private void PreviousPage() { if (HasPrevious) CurrentPage--; }
+    // private void NextPage() { if (HasNext) CurrentPage++; }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        SearchTitle = e.Value?.ToString() ?? string.Empty;
+        CurrentPage = 1;
+    }
+
+    private void ShowModal() => IsModalOpen = true;
+    private void CloseModal()
+    {
+        IsModalOpen = false;
+        NewIncident = new Incident();
+        SelectedRole = "";
+        FilteredUsersByRole.Clear();
+    }
+
+    private void SaveIncident()
+    {
+        CreateIncidentRequest createIncident = new CreateIncidentRequest(NewIncident.Title, NewIncident.Description,
+            1, 1, 1, 1, 1, 1);
+        // if (NewIncident.IncidentId > 0)
+        // {
+        //     IncidentService.UpdateIncident(createIncident);
+        // }
+        // else
+        // {
+            IncidentService.AddIncident(createIncident);
+        //}
+        
+
+        CloseModal();
+    }
+    
+
+    private void EditIncident(Incident incident)
+    {
+        NewIncident = new Incident
+        {
+            IncidentId = incident.IncidentId,
+            Title = incident.Title,
+            Description = incident.Description,
+            Status = incident.Status,
+            Priority = incident.Priority,
+            AssignedTo = incident.AssignedTo,
+            CreatedDate = incident.CreatedDate
+        };
+
+        var assignedUser = Users.FirstOrDefault(u => u.Username == incident.AssignedTo);
+        if (assignedUser != null)
+        {
+            SelectedRole = assignedUser.Role;
+            FilteredUsersByRole = Users.Where(u => u.Role == SelectedRole).ToList();
+        }
+
+        IsModalOpen = true;
+    }
+
+    private void AskDeleteConfirmation(int id)
+    {
+        pendingIncidentId = id;
+        var incident = IncidentService.GetIncident(id);
+        confirmDialog.Show("Confirm Delete", $"Are you sure you want to delete incident '{incident?.Title}'?");
+    }
+
+    private void ConfirmDelete()
+    {
+        //IncidentService.DeleteIncident(pendingIncidentId);
+    }
+
+    private void CancelDelete()
+    {
+        // No action, just close popup
+    }
+}

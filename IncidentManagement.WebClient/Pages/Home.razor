@@ -1,0 +1,34 @@
+﻿@page "/home"
+@using IncidentManagement.Shared.Services
+@layout DashboardLayout
+@inject AuthState AuthState
+@inject NavigationManager NavigationManager
+
+<div class="home-main">
+    <section class="home-card">
+        <h2>Manage Incidents</h2>
+        <p>Create, track, and resolve incidents efficiently.</p>
+        <a href="/incidents" class="btn-primary @(AuthState.IsLoggedIn ? "" : "disabled-link")">
+            Go to Incidents
+        </a>
+    </section>
+
+    <section class="home-card">
+        <h2>View Reports</h2>
+        <p>Analyze incident trends and generate detailed reports.</p>
+        <a href="/reports" class="btn-secondary @(AuthState.IsLoggedIn ? "" : "disabled-link")">
+            Go to Reports
+        </a>
+    </section>
+
+    @if (AuthState.IsLoggedIn && AuthState.CurrentUserRole == "Admin")
+    {
+        <section class="home-card">
+            <h2>Update Profile</h2>
+            <p>Manage your account details and preferences.</p>
+            <a href="/profile-management" class="btn-secondary">
+                Go to Profile
+            </a>
+        </section>
+    }
+</div>

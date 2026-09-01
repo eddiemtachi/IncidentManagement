@@ -1,0 +1,29 @@
+﻿@page "/dashboard"
+
+<h3>Incident Dashboard</h3>
+
+<div class="dashboard-grid">
+    @foreach (var chart in Charts)
+    {
+        <div class="chart-card">@chart.Title (@chart.Count)</div>
+    }
+</div>
+
+@code {
+    private List<(string Title, int Count)> Charts = new()
+    {
+        ("Open Incidents", 12),
+        ("In Progress", 8),
+        ("Resolved", 5),
+        ("Closed", 3),
+        ("Critical Severity", 4),
+        ("Notifications Sent", 20)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(5000);
+        Charts[0] = ("Open Incidents", 13); // simulate update
+        StateHasChanged();
+    }
+}

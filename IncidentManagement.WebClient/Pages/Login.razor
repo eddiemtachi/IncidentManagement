@@ -1,0 +1,91 @@
+﻿@page "/"
+@page "/login"
+@using IncidentManagement.Shared.Models
+@using IncidentManagement.Shared.Services
+@using IncidentManagement.WebClient.Services
+@layout MainLayout
+@inject NavigationManager NavManager
+@inject UserService UserService
+@inject AuthState AuthState
+
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <div class="logo-container">
+                <i class="shield-icon">!</i>
+            </div>
+            <h1 class="app-title">Incident Management System</h1>
+            <h3 class="login-subtitle">Login</h3>
+        </div>
+
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-row">
+                <InputText @bind-Value="loginModel.Email" placeholder="Email or Username" class="form-control" />
+            </div>
+
+            <div class="form-row">
+                <InputText @bind-Value="loginModel.Password" type="password" placeholder="Password" class="form-control" />
+            </div>
+
+            <button type="submit" class="btn-primary">Login</button>
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">@errorMessage</div>
+        }
+
+        <div class="login-links">
+            <a href="/signup">Sign Up</a>
+            <a href="/forgot-password">Forgot Password?</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new LoginModel();
+    private string errorMessage = string.Empty;
+
+    // protected override void OnInitialized()
+    // {
+    //     if (!AuthState.IsLoggedIn)
+    //     {
+    //         NavManager.NavigateTo("/");
+    //     }
+    // }
+
+    private void HandleLogin()
+    {
+        // Validate against UserService mock list
+        var user = UserService.Users
+            .FirstOrDefault(u => u.Email.Equals(loginModel.Email, StringComparison.OrdinalIgnoreCase));
+
+        if (user == null)
+        {
+            errorMessage = "Invalid email address.";
+            return;
+        }
+
+        // For now, mock password check: assume Password is stored in User model
+        if (user.Password != loginModel.Password)
+        {
+            errorMessage = "Incorrect password.";
+            return;
+        }
+
+        if (!user.IsActive)
+        {
+            errorMessage = "This account is deactivated.";
+            return;
+        }
+
+        // Update AuthState
+        AuthState.Login(user.Username, user.Role);
+
+        // Success: redirect to dashboard
+        NavManager.NavigateTo("/home");
+    }        
+}

@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="IncidentManagement.Application/IncidentManagement.Application.csproj" Id="38b8495e-2173-4d4c-ab99-3e977e3996f7" />
+  <Project Path="IncidentManagement.Domain/IncidentManagement.Domain.csproj" Id="7da85065-39e7-4448-8297-45158293471f" />
+  <Project Path="IncidentManagement.Infrastructure/IncidentManagement.Infrastructure.csproj" Id="62e3141d-7e9e-4ed6-b15a-d19a876cc511" />
+  <Project Path="IncidentManagement.Maui/IncidentManagement.Maui.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+  <Project Path="IncidentManagement.Shared/IncidentManagement.Shared.csproj" />
+  <Project Path="IncidentManagement.WebApi/IncidentManagement.WebApi.csproj" Id="5fb98768-39a6-4de8-bd64-db4006e878f2" />
+  <Project Path="IncidentManagement.WebClient/IncidentManagement.WebClient.csproj" />
+</Solution>

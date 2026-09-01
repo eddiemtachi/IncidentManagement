@@ -1,0 +1,84 @@
+﻿@inherits LayoutComponentBase
+@using IncidentManagement.Shared.Services
+@inject NavigationManager NavigationManager
+@inject AuthState AuthState
+
+<div class="app-container">
+    @if (AuthState.IsLoggedIn)
+    {
+        <div class="welcome-banner">
+            Welcome, @AuthState.CurrentUser
+        </div>
+    }
+
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo-container">
+                <i class="shield-icon">!</i>
+            </div>
+            <span class="nav-title">Incident Management System</span>
+        </div>
+        <div class="hamburger" @onclick="ToggleMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="nav-right @(menuOpen ? "show" : "")">
+            <a href="/home" @onclick="CloseMenu" class="@GetLinkClass()">Home</a>
+            <a href="/profile" @onclick="CloseMenu" class="@GetLinkClass()">About</a>
+            <a href="/incidents" @onclick="CloseMenu" class="@GetLinkClass()">Incidents</a>
+            <a href="/reports" @onclick="CloseMenu" class="@GetLinkClass()">Reports</a>
+
+            @if (AuthState.IsLoggedIn && AuthState.CurrentUserRole == "Admin")
+            {
+                <a href="/profile-management" @onclick="CloseMenu" class="@GetLinkClass()">Profile</a>
+            }
+
+            @if (AuthState.IsLoggedIn)
+            {
+                <a href="#" class="logout-link" @onclick="Logout">Logout</a>
+            }
+            else
+            {
+                <a href="/login" class="logout-link">Login</a>
+            }
+        </div>
+    </nav>
+
+    <main>
+        @Body
+    </main>
+</div>
+
+@code {
+    private bool menuOpen = false;
+
+    protected override void OnInitialized()
+    {
+        var currentUri = NavigationManager.Uri.ToLower();
+
+        // Redirect to login if not logged in AND not on signup/forgot-password/login
+        if (!AuthState.IsLoggedIn &&
+            !currentUri.Contains("/signup") &&
+            !currentUri.Contains("/forgot-password") &&
+            !currentUri.Contains("/login"))
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    private void ToggleMenu() => menuOpen = !menuOpen;
+    private void CloseMenu() => menuOpen = false;
+
+    private void Logout()
+    {
+        AuthState.Logout();
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private string GetLinkClass()
+    {
+        // Disable nav links if not logged in
+        return AuthState.IsLoggedIn ? "" : "disabled-link";
+    }
+}

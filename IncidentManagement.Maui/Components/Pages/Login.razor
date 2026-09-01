@@ -1,0 +1,59 @@
+﻿@page "/"
+@page "/login"
+@using IncidentManagement.Shared.Models
+
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <div class="logo-container">
+                <i class="shield-icon">!</i>
+            </div>
+            <h1 class="app-title">Incident Management System</h1>
+            <h3 class="login-subtitle">Login</h3>
+        </div>
+
+        <EditForm Model="LoginUser" OnValidSubmit="LoginUserCheck">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-row">
+                <InputText @bind-Value="LoginUser.Email" placeholder="Email or Username" class="form-control" />
+            </div>
+
+            <div class="form-row">
+                <InputText @bind-Value="LoginUser.PasswordHash" type="password" placeholder="Password" class="form-control" />
+            </div>
+
+            <button type="submit" class="btn-primary">Login</button>
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="error-message">@ErrorMessage</div>
+        }
+
+        <div class="login-links">
+            <a href="/register">Sign Up</a>
+            <a href="/forgot">Forgot Password?</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private User LoginUser = new();
+    private string ErrorMessage = string.Empty;
+
+    private void LoginUserCheck()
+    {
+        if (LoginUser.Email == "admin@ims.com" && LoginUser.PasswordHash == "1234")
+        {
+            // Navigate to dashboard or home
+            Microsoft.Maui.Controls.Application.Current.MainPage
+                = new MainPage(); // or Nav.NavigateTo("/dashboard") if you wire NavigationManager
+        }
+        else
+        {
+            ErrorMessage = "Invalid email or password. Please try again.";
+        }
+    }
+}

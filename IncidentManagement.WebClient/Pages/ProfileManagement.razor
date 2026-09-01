@@ -1,0 +1,213 @@
+﻿@page "/profile-management"
+@layout DashboardLayout
+@inject NavigationManager NavManager
+@using IncidentManagement.Shared.Models
+@using IncidentManagement.WebClient.Services
+@using IncidentManagement.WebClient.Components
+@inject UserService UserService
+
+<ConfirmDialog @ref="confirmDialog"
+               OnConfirm="ConfirmAction"
+               OnCancel="CancelAction" />
+
+<div class="profile-container">
+    <h2>User Profile Management</h2>
+    <p class="subtitle">Search, view, and manage system users</p>
+
+    <!-- Search -->
+    <div class="form-group">
+        <InputText id="search" class="form-control"
+                   placeholder="Search by Username"
+                   @bind-Value="searchTerm"
+                   @oninput="OnSearchChanged" />
+    </div>
+
+    <!-- User grid -->
+    <table class="incident-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Roles</th>
+                <th>Contact</th>
+                <th>WhatsApp</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in PagedUsers)
+            {
+                <tr class="@(HighlightUser(user) ? "highlight" : "")">
+                    <td data-label="Username">@user.Username</td>
+                    <td data-label="Email">@user.Email</td>
+                    <td data-label="Roles">@string.Join(", ", user.Roles)</td>
+                    <td data-label="Contact">@user.PhoneNumber</td>
+                    <td data-label="WhatsApp">@user.WhatsAppNumber</td>
+                    <td data-label="Actions">
+                        <!-- Details popup button -->
+                        <button class="icon-btn details" data-tooltip="Details" @onclick="() => ShowDetails(user)">🔍</button>
+                        @if (user.IsActive)
+                        {
+                            <button class="icon-btn danger" data-tooltip="Deactivate" @onclick="() => AskConfirmation(user.UserId, false)">❌</button>
+                        }
+                        else
+                        {
+                            <button class="icon-btn reactivate" data-tooltip="Reactivate" @onclick="() => AskConfirmation(user.UserId, true)">🔄</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Paging controls -->
+    <div class="paging-controls">
+        <button class="btn-action" @onclick="PrevPage" disabled="@(_pageIndex == 0)">Previous</button>
+        <span>Page @_pageIndex + 1 of @_totalPages</span>
+        <button class="btn-action" @onclick="NextPage" disabled="@(_pageIndex >= _totalPages - 1)">Next</button>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+@if (IsDetailsOpen && SelectedUser != null)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <h3>User Details - @SelectedUser.Username</h3>
+
+            <label>Email</label>
+            <InputText @bind-Value="SelectedUser.Email" />
+
+            <label>Contact</label>
+            <InputText @bind-Value="SelectedUser.PhoneNumber" />
+
+            <label>WhatsApp</label>
+            <InputText @bind-Value="SelectedUser.WhatsAppNumber" />
+
+            <label>Roles</label>
+            <select multiple class="form-control" @onchange="OnRolesChanged">
+                @foreach (var role in AllRoles)
+                {
+                    <option value="@role" selected="@SelectedUser.Roles.Contains(role)">@role</option>
+                }
+            </select>
+
+            <div class="modal-actions">
+                <button class="cancel-btn" @onclick="CloseDetails">Cancel</button>
+                <button class="save-btn" @onclick="SaveDetails">Save</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string searchTerm = string.Empty;
+    private int _pageIndex = 0;
+    private int _pageSize = 3;
+    private int _totalPages => (int)Math.Ceiling((double)FilteredUsers.Count / _pageSize);
+
+    // All available roles in the system
+    private List<string> AllRoles = new() { "Admin", "Estate Manager", "Security", "Maintenance", "Resident" };
+
+    private List<User> FilteredUsers =>
+        string.IsNullOrWhiteSpace(searchTerm)
+            ? UserService.Users.ToList()
+            : UserService.Users
+                .Where(u => u.Username.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+    private List<User> PagedUsers =>
+        FilteredUsers.Skip(_pageIndex * _pageSize).Take(_pageSize).ToList();
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        if (searchTerm.Length >= 3)
+        {
+            _pageIndex = 0;
+        }
+    }
+
+    private bool HighlightUser(User user) =>
+        !string.IsNullOrWhiteSpace(searchTerm) &&
+        user.Username.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase);
+
+    private void PrevPage() => _pageIndex--;
+    private void NextPage() => _pageIndex++;
+
+    // Confirmation handling
+    private ConfirmDialog confirmDialog;
+    private long pendingUserId;
+    private bool pendingReactivate;
+
+    private void AskConfirmation(long userId, bool reactivate)
+    {
+        pendingUserId = userId;
+        pendingReactivate = reactivate;
+
+        var user = UserService.Users.FirstOrDefault(u => u.UserId == userId);
+        var actionText = reactivate ? "reactivate" : "deactivate";
+        confirmDialog.Show("Confirm Action", $"Are you sure you want to {actionText} user '{user?.Username}'?");
+    }
+
+    private void ConfirmAction()
+    {
+        if (pendingReactivate)
+            UserService.ReactivateUser(pendingUserId);
+        else
+            UserService.SoftDeleteUser(pendingUserId);
+    }
+
+    private void CancelAction()
+    {
+        // No action
+    }
+
+    // Details popup
+    private bool IsDetailsOpen = false;
+    private User? SelectedUser;
+
+    private void ShowDetails(User user)
+    {
+        SelectedUser = user;
+        IsDetailsOpen = true;
+    }
+
+    private void CloseDetails()
+    {
+        IsDetailsOpen = false;
+        SelectedUser = null;
+    }
+
+    private void SaveDetails()
+    {
+        if (SelectedUser != null)
+        {
+            // Ask for confirmation before saving
+            confirmDialog.Show("Confirm Save", $"Are you sure you want to save changes for user '{SelectedUser.Username}'?");
+        }
+    }
+
+    private void ConfirmSave()
+    {
+        if (SelectedUser != null)
+        {
+            UserService.UpdateUser(SelectedUser);
+        }
+        CloseDetails();
+    }
+
+    private void OnRolesChanged(ChangeEventArgs e)
+    {
+        if (SelectedUser == null) return;
+
+        if (e.Value is IEnumerable<string> selected)
+        {
+            SelectedUser.Roles = selected.ToList();
+        }
+        else if (e.Value is string single)
+        {
+            SelectedUser.Roles = new List<string> { single };
+        }
+    }
+}

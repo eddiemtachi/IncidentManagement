@@ -1,0 +1,49 @@
+﻿@page "/reports"
+@layout DashboardLayout
+@inject IJSRuntime JS
+
+<h2>Incident Report Dashboard</h2>
+
+<div class="charts-grid">
+    <div>
+        <div class="chart-title">Incidents by Type</div>
+        <canvas id="incidentByType"></canvas>
+    </div>
+    <div>
+        <div class="chart-title">Incidents per Month</div>
+        <canvas id="incidentByMonth"></canvas>
+    </div>
+    <div>
+        <div class="chart-title">Severity Levels</div>
+        <canvas id="incidentSeverity"></canvas>
+    </div>
+    <div>
+        <div class="chart-title">Resolution Progress</div>
+        <canvas id="incidentResolution"></canvas>
+    </div>
+    <div>
+        <div class="chart-title">Incidents by Location</div>
+        <canvas id="incidentLocation"></canvas>
+    </div>
+    <div>
+        <div class="chart-title">Incident Trend (6 Months)</div>
+        <canvas id="incidentTrend"></canvas>
+    </div>
+</div>
+
+<div class="analyst-section">
+    <h3>Analyst Insights</h3>
+    <p>Security incidents dominate overall counts, but resolution rates are improving week by week.</p>
+    <p>Critical severity remains low, but monitoring is essential for proactive response.</p>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Call the JS function defined in incidentCharts.js
+            await JS.InvokeVoidAsync("incidentCharts.init");
+        }
+    }
+}
