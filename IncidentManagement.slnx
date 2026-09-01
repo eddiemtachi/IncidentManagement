@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="IncidentManagement.Maui/IncidentManagement.Maui.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+  <Project Path="IncidentManagement.Shared/IncidentManagement.Shared.csproj" />
+  <Project Path="IncidentManagement.WebClient/IncidentManagement.WebClient.csproj" />
+</Solution>
