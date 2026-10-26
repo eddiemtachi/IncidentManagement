@@ -22,6 +22,17 @@ namespace IncidentManagement.Application.Helpers
             incident.UpdatedAt
         );
 
+        public static UserResponse MapToResponse(User user) =>
+            new UserResponse(
+                        user.UserId,
+                        user.Username ?? string.Empty,
+                        user.Email ?? string.Empty,
+                        user.PhoneNumber ?? string.Empty,
+                        user.WhatsAppNumber ?? string.Empty,
+                        user.PropertyId,
+                        user.IsActive
+            );
+
         public static IEnumerable<IncidentResponse> MapToResponse(IEnumerable<Incident> incidents)
         {
             var responses = new List<IncidentResponse>();
@@ -29,6 +40,18 @@ namespace IncidentManagement.Application.Helpers
             foreach (var incident in incidents)
             {                
                 var response = MapToResponse(incident);
+                responses.Add(response);
+            }
+
+            return responses;
+        }
+        public static IEnumerable<UserResponse> MapToResponse(IEnumerable<User> users)
+        {
+            var responses = new List<UserResponse>();
+
+            foreach (var user in users)
+            {
+                var response = MapToResponse(user);
                 responses.Add(response);
             }
 
@@ -45,6 +68,17 @@ namespace IncidentManagement.Application.Helpers
                 request.StatusId,
                 request.PriorityId,               
                 request.PropertyId
+            );
+
+        public static User MapToEntity(CreateUserRequest request) =>
+            new User(
+                    request.Username ?? string.Empty,
+                    request.Email ?? string.Empty,
+                    request.PhoneNumber,
+                    request.WhatsAppNumber,           
+                    request.PasswordHash,
+                    request.PasswordSalt,
+                    request.PropertyId
             );
     }
 }

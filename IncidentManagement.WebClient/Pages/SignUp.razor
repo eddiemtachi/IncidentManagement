@@ -61,7 +61,7 @@
 
         <!-- Role -->
         <div class="form-group">
-            <label for="role">Role</label>
+            <label for="role">Propert</label>
             <InputSelect id="role" class="form-control" @bind-Value="newUser.Role">
                 <option value="">Select a role</option>                
                 <option value="Admin">City Power</option>
@@ -71,7 +71,7 @@
                 <option value="Analyst">Tenant</option>                                
             </InputSelect>
             <ValidationMessage For="@(() => newUser.Role)" />
-        </div>
+        </div>        
 
         <button type="submit" class="btn-action">Sign Up</button>
     </EditForm>

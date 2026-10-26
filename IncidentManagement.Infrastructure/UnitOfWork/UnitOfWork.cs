@@ -12,9 +12,12 @@ namespace IncidentManagement.Infrastructure.UnitOfWork
         public IIncidentRepository Incidents { get; }
         public IIncidentSeverityRepository IncidentSeverities { get; }
         public IIncidentStatusRepository IncidentStatuses { get; }
-        public IPriorityRepository Priorities { get; }
+        public IPriorityRepository Priority { get; }
         public IPropertyRepository Properties { get; }
         public IUserRepository Users { get; }
+        public IIncidentRoleRepository Roles { get; }
+
+        public IIncidentCategoryRepository IncidentCategories { get; }
 
         public UnitOfWork(IncidentDbContext context)
         {
@@ -22,9 +25,11 @@ namespace IncidentManagement.Infrastructure.UnitOfWork
             Incidents = new IncidentRepository(_context);
             IncidentSeverities = new IncidentSeverityRepository(_context);
             IncidentStatuses = new IncidentStatusRepository(_context);
-            Priorities = new PriorityRepository(_context);
+            Priority = new PriorityRepository(_context);
             Properties = new PropertyRepository(_context);
             Users = new UserRepository(_context);
+            Roles = new IncidentRoleRepository(_context);
+            IncidentCategories = new IncidentCategoryRepository(_context);
         }
 
         public async Task<int> CompleteAsync()

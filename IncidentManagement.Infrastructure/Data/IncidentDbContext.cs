@@ -16,6 +16,7 @@ namespace IncidentManagement.Infrastructure.Data
         public DbSet<Priority> Priorities { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Property> Properties { get; set; }
+        public DbSet<Roles> Roles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

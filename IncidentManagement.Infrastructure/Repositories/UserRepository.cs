@@ -16,5 +16,11 @@ namespace IncidentManagement.Infrastructure.Repositories
                 return Context as IncidentDbContext;
             }
         }
+
+        public Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            throw new NotImplementedException();
+        }        
     }
 }
+

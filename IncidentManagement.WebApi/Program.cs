@@ -1,4 +1,5 @@
 using IncidentManagement.Application.Interfaces;
+using IncidentManagement.Application.Service_Interfaces;
 using IncidentManagement.Application.Services;
 using IncidentManagement.Application.UnitOfWork;
 using IncidentManagement.Infrastructure.Repositories;
@@ -32,13 +33,19 @@ builder.Services.AddDbContext<IncidentManagement.Infrastructure.Data.IncidentDbC
 
 // Register repositories
 builder.Services.AddScoped<IIncidentRepository, IncidentRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>(); // assuming you have UserRepository
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Register UnitOfWork
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Register application services
-builder.Services.AddScoped<IncidentService>();
+builder.Services.AddScoped<IIncidentService, IncidentService>();
+builder.Services.AddScoped<IIncidentStatusService, IncidentStatusService>();
+builder.Services.AddScoped<IIncidentPriorityService, IncidentPriorityService>();
+builder.Services.AddScoped<IIncidentRoleService, IncidentRoleService>();
+builder.Services.AddScoped<IIncidentCategoryService, IncidentCategoryService>();
+builder.Services.AddScoped<IIncidentPropertyService, IncidentPropertyService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddControllers();
 // Register Swagger

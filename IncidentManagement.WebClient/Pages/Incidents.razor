@@ -1,13 +1,17 @@
 ﻿@page "/incidents"
 @layout DashboardLayout
 @using IncidentManagement.Application.Dtos.Requests
+@using IncidentManagement.Application.Dtos.Responses
 @using IncidentManagement.Shared.Models
 @using IncidentManagement.Shared.Services
 @using IncidentManagement.WebClient.Components
 @using IncidentManagement.WebClient.Services
+@using IncidentManagement.WebClient.Interfaces
+@inject HttpClient Http
 @inject IncidentService IncidentService
 @inject AuthState AuthState
 @inject UserService UserService
+@inject ILookupCacheService LookupCacheService
 
 <ConfirmDialog @ref="confirmDialog"
                OnConfirm="ConfirmDelete"
@@ -30,34 +34,83 @@
                 <input type="text" @bind="NewIncident.Title" />
 
                 <label>Status</label>
-                <select @bind="NewIncident.Status">
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Closed">Closed</option>
-                </select>
+                @if (IsLoading)
+                {
+                    <p>Loading lookups...</p>
+                }
+                else
+                {
+                    <select class="form-select" @bind="SelectedStatusId">
 
-                <label>Priority</label>
-                <select @bind="NewIncident.Priority">
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                </select>
+                        <option value="0">
+                            -- Select Status --
+                        </option>
+                        @foreach (var status in IncidentStatuses)
+                        {
+                            <option value="@status.StatusId">
+                                @status.StatusName
+                            </option>
+                        }
+                    </select>
 
-                <!-- Role Team dropdown -->
-                <label>Role Team</label>
-                <select @bind="SelectedRole">
-                    <option value="">-- Select Role --</option>
-                    @foreach (var role in Roles)
-                    {
-                        <option value="@role">@role</option>
+                    <label> Incident Category</label>
+                        <select class="form-select" @bind="IncidentCategoryId">
+
+                        <option value="0">
+                            -- Select Incident Category --
+                        </option>
+                        @foreach (var Category in IncidentCategories)
+                        {
+                            <option value="@Category.CategoryId">
+                                @Category.CategoryName
+                            </option>
+                        }
+                    </select>
+                    <select class="form-select" @bind="SelectedPriorityId">
+
+                        <option value="0">
+                            -- Select Priority --
+                        </option>
+                        @foreach (var Priority in IncidentPriorities)
+                        {
+                            <option value="@Priority.PriorityId">
+                                @Priority.PriorityName
+                            </option>
+                        }
+                    </select>
+
+                    <label>Priority</label>
+                    <select class="form-select" @bind="SelectedPriorityId">
+
+                        <option value="0">
+                            -- Select Priority --
+                        </option>
+                        @foreach (var Priority in IncidentPriorities)
+                        {
+                            <option value="@Priority.PriorityId">
+                                @Priority.PriorityName
+                            </option>
+                        }
+                    </select>
+
+                    <!-- Role Team dropdown -->
+                    <label>Role Team</label>
+                    <select @bind="SelectedRoleId">
+                        <option value="">-- Select Role --</option>
+                        @foreach (var role in IncidentRoles)
+                        {
+                        <option value="@role.RoleId">
+                            @role.RoleName
+                        </option>
                     }
                 </select>
+                }
 
-                <label>Assigned To</label>
-                <select @bind="NewIncident.AssignedTo">
-                    @foreach (var user in FilteredUsersByRole)
+                <label>Address</label>
+                <select @bind="SelectedPropertyId">
+                    @foreach (var Property in IncidentProperties)
                     {
-                        <option value="@user.Username">@user.Username</option>
+                        <option value="@Property.PropertyId"> @Property.PropertyName</option>
                     }
                 </select>
 
@@ -114,6 +167,13 @@
         <tbody>
             @* @foreach (var incident in PagedIncidents)
             {
+             <label>Assigned To</label>
+                <select @bind="NewIncident.AssignedTo">
+                    @foreach (var user in FilteredUsersByRole)
+                    {
+                        <option value="@user.Username">@user.Username</option>
+                    }
+                </select>
                 <tr>
                     <td>@incident.IncidentId</td>
                     <td>@incident.Title</td>
@@ -143,6 +203,11 @@
     private List<User> Users = new();
     private List<string> Roles = new();
     private List<User> FilteredUsersByRole = new();
+    private List<IncidentStatusResponse> IncidentStatuses = new();
+    private List<IncidentPriorityResponse> IncidentPriorities = new();
+    private List<IncidentRoleResponse> IncidentRoles = new();
+    private List<IncidentCategoryResponse> IncidentCategories = new();
+    private List<IncidentPropertyResponse> IncidentProperties = new();
 
     private string SearchTitle = "";
     private string FilterStatus = "";
@@ -174,6 +239,14 @@
                 : Users.Where(u => u.Role == selectedRole).ToList();
         }
     }
+
+    private int IncidentCategoryId { get; set; }
+    private int SelectedStatusId { get; set; }
+    private int SelectedPriorityId { get; set; }
+    private int SelectedRoleId { get; set; }
+    private int SelectedCategoryId { get; set; }
+    private int SelectedPropertyId { get; set; }
+
     private string selectedRole = "";
 
     // private List<Incident> FilteredIncidents =>
@@ -198,6 +271,84 @@
     //     .Take(PageSize)
     //     .ToList();
 
+    private IncidentModel Model = new();    
+
+    private bool IsLoading;
+
+    private string Message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsLoading = true;
+
+        try
+        {
+            IncidentStatuses = await LookupCacheService.GetIncidentStatusesAsync();
+            IncidentPriorities = await LookupCacheService.GetIncidentPrioritiesAsync();
+            IncidentRoles = await LookupCacheService.GetIncidentRolesAsync();
+            IncidentCategories = await LookupCacheService.GetIncidentCategoriesAsync();
+            IncidentProperties = await LookupCacheService.GetIncidentPropertiesAsync();
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    // private async Task SaveAsync()
+    // {
+    //     // Replace with your actual save endpoint
+
+    //     var response =
+    //     await Http.PostAsJsonAsync(
+    //     "api/Incident",
+    //     Model);
+
+    //     if (response.IsSuccessStatusCode)
+    //     {
+    //         Message = "Incident created successfully.";
+    //     }
+    // }
+
+    public class IncidentModel
+    {
+        public string Title { get; set; } = string.Empty;
+
+        public int StatusId { get; set; }
+    }
+
+    public class IncidentStatusDto
+    {
+        public int StatusId { get; set; }
+
+        public string StatusName { get; set; } = string.Empty;
+    }
+    public class IncidentPriorityDto
+    {
+        public int PriorityId { get; set; }
+        public string PriorityName { get; set; } = string.Empty;
+    }
+    public class IncidentRoleDto
+    {
+        public int RoleId { get; set; }
+        public string RoleName { get; set; } = string.Empty;
+    }
+
+    public class IncidentCategoryDto
+    {
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+    }
+    public class IncidentPropertyDto
+    {
+        public int PropertyId { get; set; }
+        public string PropertyName { get; set; } = string.Empty;
+    }
     private void PreviousPage() { if (HasPrevious) CurrentPage--; }
     // private void NextPage() { if (HasNext) CurrentPage++; }
 
@@ -212,6 +363,10 @@
     {
         IsModalOpen = false;
         NewIncident = new Incident();
+        IncidentCategoryId = 0;
+        SelectedStatusId = 0;
+        SelectedPriorityId = 0;
+        SelectedRoleId = 0;
         SelectedRole = "";
         FilteredUsersByRole.Clear();
     }
@@ -219,21 +374,21 @@
     private void SaveIncident()
     {
         CreateIncidentRequest createIncident = new CreateIncidentRequest(NewIncident.Title, NewIncident.Description,
-            1, 1, 1, 1, 1, 1);
+            1, IncidentCategoryId, 1, SelectedStatusId, SelectedPriorityId, 1);
         // if (NewIncident.IncidentId > 0)
         // {
         //     IncidentService.UpdateIncident(createIncident);
         // }
         // else
         // {
-            IncidentService.AddIncident(createIncident);
+        IncidentService?.AddIncident(createIncident);
         //}
-        
 
+        
         CloseModal();
     }
-    
 
+    
     private void EditIncident(Incident incident)
     {
         NewIncident = new Incident
@@ -244,7 +399,7 @@
             Status = incident.Status,
             Priority = incident.Priority,
             AssignedTo = incident.AssignedTo,
-            CreatedDate = incident.CreatedDate
+            CreatedDate = incident.CreatedDate,
         };
 
         var assignedUser = Users.FirstOrDefault(u => u.Username == incident.AssignedTo);

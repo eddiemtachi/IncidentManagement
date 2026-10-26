@@ -8,5 +8,6 @@ namespace IncidentManagement.Application.Interfaces
 {
     public interface IUserRepository : IRepository<User>
     {
+        Task<IEnumerable<User>> GetAllUsersAsync();        
     }
 }

@@ -1,4 +1,5 @@
 ﻿using IncidentManagement.Application.Dtos.Requests;
+using IncidentManagement.Application.Service_Interfaces;
 using IncidentManagement.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -10,9 +11,9 @@ namespace IncidentManagement.WebApi.Controllers
     [ApiController]
     public class IncidentController : ControllerBase
     {
-        private readonly IncidentService _incidentService;
+        private readonly IIncidentService _incidentService;
 
-        public IncidentController(IncidentService incidentService)
+        public IncidentController(IIncidentService incidentService)
         {
             _incidentService = incidentService;
         }

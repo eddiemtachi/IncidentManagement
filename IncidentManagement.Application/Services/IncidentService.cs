@@ -1,11 +1,12 @@
 ﻿using IncidentManagement.Application.Dtos.Requests;
 using IncidentManagement.Application.Dtos.Responses;
 using IncidentManagement.Application.Helpers;
+using IncidentManagement.Application.Service_Interfaces;
 using IncidentManagement.Application.UnitOfWork;
 
 namespace IncidentManagement.Application.Services
 {
-    public class IncidentService
+    public class IncidentService : IIncidentService
     {
         private readonly IUnitOfWork _unitOfWork;
 

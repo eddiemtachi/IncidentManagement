@@ -7,9 +7,12 @@ namespace IncidentManagement.Application.UnitOfWork
         IIncidentRepository Incidents { get; }
         IIncidentSeverityRepository IncidentSeverities { get; }
         IIncidentStatusRepository IncidentStatuses { get; }
-        IPriorityRepository Priorities { get; }
+        IIncidentRoleRepository Roles { get; }
+        IPriorityRepository Priority { get; }
         IPropertyRepository Properties { get; }
         IUserRepository Users { get; }
+        IIncidentCategoryRepository IncidentCategories { get; }
+
         Task<int> CompleteAsync();
     }
 }
